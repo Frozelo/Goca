@@ -1,13 +1,15 @@
 APP_NAME = goca
+OUTPUT_DIR = bin
 
 PORT ?= 3000
 ORIGIN ?= http://dummyjson.com
 
 build:
-	go build -o $(APP_NAME) main.go
+	mkdir -p $(OUTPUT_DIR)
+	go build -o $(OUTPUT_DIR)/$(APP_NAME) main.go
 
 run: build
-	./$(APP_NAME) --port $(PORT) --origin $(ORIGIN)
+    $(OUTPUT_DIR)/$(APP_NAME) --port $(PORT) --origin $(ORIGIN)
 
 clean:
 	rm -f $(APP_NAME)
