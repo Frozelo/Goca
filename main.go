@@ -4,6 +4,7 @@ import (
 	"flag"
 	"fmt"
 	"log"
+	"net/http"
 	"net/url"
 )
 
@@ -21,5 +22,15 @@ func main() {
 		log.Fatal("Failed to parse origin: %w", err)
 	}
 
-	fmt.Println(*port, originUrl.Host, originUrl.Port())
+	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
+		w.Write([]byte(r.Method))
+	})
+
+	addr := fmt.Sprintf(":%d", *port)
+
+	log.Printf("Starting caching proxy on port %d, forwarding to %s", *port, originUrl)
+	if err := http.ListenAndServe(addr, nil); err != nil {
+		log.Fatal(err)
+	}
+
 }
