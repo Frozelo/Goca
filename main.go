@@ -29,6 +29,23 @@ func NewCache() *InMemmoryCache {
 	}
 }
 
+func (ic *InMemmoryCache) Get(key string) (*CacheItem, bool) {
+	ic.mu.RLock()
+	defer ic.mu.RUnlock()
+
+	item, exists := ic.data[key]
+
+	return item, exists
+}
+
+func (ic *InMemmoryCache) Set(key string, item *CacheItem) {
+	ic.mu.Lock()
+	defer ic.mu.Unlock()
+
+	ic.data[key] = item
+
+}
+
 var cache = NewCache()
 
 func main() {
