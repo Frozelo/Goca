@@ -7,7 +7,29 @@ import (
 	"log"
 	"net/http"
 	"net/url"
+	"sync"
+	"time"
 )
+
+type CacheItem struct {
+	Body       []byte
+	Header     http.Header
+	StatusCode int
+	CachedAt   time.Time
+}
+
+type InMemmoryCache struct {
+	data map[string]*CacheItem
+	mu   sync.RWMutex
+}
+
+func NewCache() *InMemmoryCache {
+	return &InMemmoryCache{
+		data: make(map[string]*CacheItem),
+	}
+}
+
+var cache = NewCache()
 
 func main() {
 	port := flag.Int("port", 8080, "Port on which the caching proxy server will run")
