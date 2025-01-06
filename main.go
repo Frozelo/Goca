@@ -3,6 +3,7 @@ package main
 import (
 	"flag"
 	"fmt"
+	"io"
 	"log"
 	"net/http"
 	"net/url"
@@ -23,7 +24,7 @@ func main() {
 	}
 
 	http.HandleFunc("/", func(w http.ResponseWriter, r *http.Request) {
-		w.Write([]byte(r.Method))
+		handleRequest(w, r, originUrl)
 	})
 
 	addr := fmt.Sprintf(":%d", *port)
@@ -32,5 +33,33 @@ func main() {
 	if err := http.ListenAndServe(addr, nil); err != nil {
 		log.Fatal(err)
 	}
+}
+
+func handleRequest(w http.ResponseWriter, r *http.Request, originUrl *url.URL) {
+	forwardUrl := *originUrl
+
+	req, err := http.NewRequest(r.Method, forwardUrl.String(), r.Body)
+	if err != nil {
+		http.Error(w, "Failed to create request to origin", http.StatusInternalServerError)
+		return
+	}
+
+	client := &http.Client{}
+
+	resp, err := client.Do(req)
+	if err != nil {
+		http.Error(w, "Failed to get response from origin", http.StatusBadGateway)
+		return
+	}
+	defer resp.Body.Close()
+
+	bodyBytes, err := io.ReadAll(resp.Body)
+	if err != nil {
+		http.Error(w, "Failed to get bodyBytes from body response", http.StatusInternalServerError)
+		return
+	}
+
+	w.WriteHeader(http.StatusOK)
+	w.Write(bodyBytes)
 
 }
