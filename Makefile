@@ -9,7 +9,7 @@ build:
 	go build -o $(OUTPUT_DIR)/$(APP_NAME) main.go
 
 run: build
-    $(OUTPUT_DIR)/$(APP_NAME) --port $(PORT) --origin $(ORIGIN)
+	$(OUTPUT_DIR)/$(APP_NAME) --port $(PORT) --origin $(ORIGIN)
 
 clean:
 	rm -f $(APP_NAME)
