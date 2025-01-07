@@ -75,6 +75,14 @@ func main() {
 }
 
 func handleRequest(w http.ResponseWriter, r *http.Request, originUrl *url.URL) {
+	cacheKey := r.Method + ":" + originUrl.String()
+
+	if item, exists := cache.Get(cacheKey); exists {
+		log.Println("Found in it cache")
+		w.Write(item.Body)
+		return
+	}
+	log.Println("Not found in cache. Providing request to origin url and save it in cache")
 	forwardUrl := *originUrl
 
 	req, err := http.NewRequest(r.Method, forwardUrl.String(), r.Body)
@@ -97,6 +105,16 @@ func handleRequest(w http.ResponseWriter, r *http.Request, originUrl *url.URL) {
 		http.Error(w, "Failed to get bodyBytes from body response", http.StatusInternalServerError)
 		return
 	}
+
+	item := CacheItem{
+		Body:       bodyBytes,
+		Header:     resp.Header,
+		StatusCode: resp.StatusCode,
+		CachedAt:   time.Now(),
+	}
+
+	log.Println("Saving in cache")
+	cache.Set(cacheKey, &item)
 
 	w.WriteHeader(http.StatusOK)
 	w.Write(bodyBytes)
