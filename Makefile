@@ -2,7 +2,7 @@ APP_NAME = goca
 OUTPUT_DIR = bin
 
 PORT ?= 3000
-ORIGIN ?= http://dummyjson.com
+ORIGIN ?= http://localhost:8080
 
 build:
 	mkdir -p $(OUTPUT_DIR)
