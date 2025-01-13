@@ -79,6 +79,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request, originUrl *url.URL) {
 
 	if item, exists := cache.Get(cacheKey); exists {
 		log.Println("Found in it cache")
+		w.Header().Set("X-Cache", "HIT")
 		w.Write(item.Body)
 		return
 	}
@@ -116,7 +117,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request, originUrl *url.URL) {
 	log.Println("Saving in cache")
 	cache.Set(cacheKey, &item)
 
+	w.Header().Set("X-Cache", "MISS")
 	w.WriteHeader(http.StatusOK)
 	w.Write(bodyBytes)
-
 }
