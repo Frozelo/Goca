@@ -1,6 +1,7 @@
 package main
 
 import (
+	"context"
 	"flag"
 	"fmt"
 	"io"
@@ -76,17 +77,25 @@ func main() {
 
 	originUrl, err := url.Parse(*origin)
 	if err != nil {
-		log.Fatal("Failed to parse origin: %w", err)
+		log.Fatalf("Failed to parse origin: %v", err)
 	}
+
+	ctx, cancel := context.WithCancel(context.Background())
+	defer cancel()
 
 	go func() {
 		ticker := time.NewTicker(*cleanupInterval)
 		defer ticker.Stop()
 
 		for {
-			<-ticker.C
-			log.Println("Cleaning expired items inside the cache...")
-			cache.CleanExpired()
+			select {
+			case <-ticker.C:
+				log.Println("Cleaning expired items inside the cache...")
+				cache.CleanExpired()
+			case <-ctx.Done():
+				log.Println("Stopping cache cleanup goroutine")
+				return
+			}
 		}
 	}()
 
@@ -103,7 +112,7 @@ func main() {
 }
 
 func handleRequest(w http.ResponseWriter, r *http.Request, originUrl *url.URL, ttl time.Duration) {
-	cacheKey := r.Method + ":" + originUrl.String()
+	cacheKey := r.Method + ":" + originUrl.String() + r.URL.RequestURI()
 
 	if item, exists := cache.Get(cacheKey); exists {
 		log.Println("Found in it cache")
@@ -115,7 +124,7 @@ func handleRequest(w http.ResponseWriter, r *http.Request, originUrl *url.URL, t
 	forwardUrl := *originUrl
 	endpont := "/api/v1/projects/"
 
-	req, err := http.NewRequest(r.Method, forwardUrl.String()+endpont, r.Body)
+	req, err := http.NewRequestWithContext(r.Context(), r.Method, forwardUrl.String()+endpont, r.Body)
 	if err != nil {
 		log.Println(err)
 		http.Error(w, "Failed to create request to origin", http.StatusInternalServerError)
